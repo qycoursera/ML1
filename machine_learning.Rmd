@@ -1,0 +1,45 @@
+---
+title: "ML"
+author: "qy"
+date: "Sunday, July 26, 2015"
+output: html_document
+---
+
+When people do exercise,  one thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. The goal of this report is to predict the manner in which people did the exercise. The data used in this project is the  data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
+
+First let us load the data, and drop the coumns with mostly missing value. 
+```{r}
+library(caret)
+df = read.csv("pml-training.csv", na.string=c("NA", "-", "", "#DIV/0!"))
+obs = nrow(df)
+find_na<-function(column, obs){
+   if (sum(is.na(column))< 0.3 * obs){
+     TRUE
+   }
+   else{
+     FALSE
+   }
+}
+keep_index = which(apply(df,2,find_na,obs))
+df<-df[, keep_index]
+df<-df[, c(-1,-2,-3,-4,-5)] #drop time stamp and user name
+```
+
+Split data to training and validation set (we already has the seperate testing set).
+```{r}
+inTrain <- createDataPartition(y=df$classe,
+                              p=0.7, list=FALSE)
+training <- df[inTrain,]
+testing <- df[-inTrain,]
+```
+
+Then using tree classifier to fit the model.
+```{r, cache=TRUE}
+modFit <- train(classe~ .,data=training,method="rpart")
+```
+
+We will check the errors. 
+```{r}
+predictions <- predict(modFit,newdata=testing)
+confusionMatrix(predictions,testing$classe)
+```
